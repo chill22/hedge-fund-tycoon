@@ -521,9 +521,203 @@
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+    
+    /* ========== MOBILE RESPONSIVE ========== */
+    @media (max-width: 900px) {
+      .main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+        overflow-y: auto;
+      }
+      .sidebar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 10px;
+      }
+      .chart-container {
+        min-height: 400px;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      .header {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 8px 12px;
+        gap: 8px;
+      }
+      .stats-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+      }
+      .stat {
+        padding: 4px 8px;
+        min-width: 70px;
+      }
+      .stat-label { font-size: 0.5rem; }
+      .stat-value { font-size: 0.8rem; }
+      .logo-text { font-size: 1rem; }
+      
+      .main {
+        padding: 8px;
+        gap: 8px;
+      }
+      
+      .chart-header {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .ticker { font-size: 0.9rem; }
+      .price-display { font-size: 1.2rem; }
+      .controls {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .control-btn {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+      }
+      
+      .trade-panel {
+        grid-template-columns: 1fr;
+      }
+      .action-buttons {
+        grid-column: span 1;
+      }
+      .action-btn {
+        padding: 16px 10px;
+        font-size: 0.9rem;
+      }
+      
+      .sidebar {
+        grid-template-columns: 1fr;
+      }
+      
+      .powerups-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      /* Modal mobile adjustments */
+      .modal-content {
+        margin: 20% auto;
+        width: 90%;
+        max-width: 320px;
+      }
+    }
+    
+    /* ========== RANK REQUIRED MODAL ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 360px;
+      width: 85%;
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    }
+    .modal-overlay.show .modal-content {
+      transform: scale(1);
+    }
+    .modal-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .modal-text {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .modal-requirement {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .modal-rank-icon {
+      font-size: 2rem;
+    }
+    .modal-rank-info {
+      text-align: left;
+      flex: 1;
+    }
+    .modal-rank-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .modal-rank-sub {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+    .modal-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--blue);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .modal-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(88, 166, 255, 0.3);
+    }
   </style>
 </head>
 <body>
+  <!-- Rank Required Modal -->
+  <div class="modal-overlay" id="rankModal">
+    <div class="modal-content">
+      <div class="modal-icon" id="modalIcon">🔒</div>
+      <div class="modal-title" id="modalTitle">Rank Required</div>
+      <div class="modal-text" id="modalText">You need to reach a higher rank to use this feature.</div>
+      <div class="modal-requirement">
+        <div class="modal-rank-icon" id="modalRankIcon">📊</div>
+        <div class="modal-rank-info">
+          <div class="modal-rank-name" id="modalRankName">Day Trader</div>
+          <div class="modal-rank-sub" id="modalRankSub">Required Rank</div>
+        </div>
+      </div>
+      <button class="modal-btn" onclick="closeModal()">Got it</button>
+    </div>
+  </div>
+
   <header class="header">
     <div class="logo">
       <span class="logo-icon">🐂</span>
@@ -1199,9 +1393,18 @@
       pows.forEach(pw => {
         const p = G.powerups[pw.id];
         const d = document.createElement('div');
+        const locked = p.n <= 0 || p.cd > 0;
         d.className = 'powerup' + (p.n <= 0 ? ' locked' : '') + (p.cd > 0 ? ' cooldown' : '');
         d.innerHTML = `<div class="powerup-icon">${pw.icon}</div><div class="powerup-name">${pw.name}</div><div class="powerup-count">${p.cd > 0 ? p.cd + 's' : 'x' + p.n}</div>`;
-        d.onclick = () => usePow(pw.id);
+        d.onclick = () => {
+          if (p.n <= 0) {
+            showModal('🔋', 'Out of Power-Ups!', 'Watch an ad to get more power-ups, or keep trading to earn them as rewards.', {name: 'Free Power-Up', sub: 'Watch ad to recharge', icon: '📺'});
+          } else if (p.cd > 0) {
+            showModal('⏳', 'On Cooldown', `This power-up is recharging. ${p.cd} seconds remaining.`, {name: 'Cooldown Active', sub: `${p.cd}s left`, icon: '⏰'});
+          } else {
+            usePow(pw.id);
+          }
+        };
         powEl.appendChild(d);
       });
 
@@ -1215,11 +1418,44 @@
         const d = document.createElement('div');
         d.className = 'upgrade' + (owned ? ' owned' : '') + (locked ? ' locked' : '');
         d.innerHTML = `<div class="upgrade-icon">${u.icon}</div><div class="upgrade-info"><div class="upgrade-name">${u.name}</div><div class="upgrade-desc">${locked ? 'Unlock at ' + ranks[u.r].name : u.d}</div></div><div class="upgrade-cost ${owned ? 'done' : ''}">${owned ? '✓' : '$' + u.p.toLocaleString()}</div>`;
-        if (!owned && !locked && G.cash >= u.p) d.onclick = () => buyUpg(u.id);
+        d.onclick = () => {
+          if (owned) {
+            showModal('✓', 'Already Owned!', `You already have ${u.name}. Keep trading to unlock more upgrades!`, {name: 'Owned', sub: 'Upgrade complete', icon: '✅'});
+          } else if (locked) {
+            const reqRank = ranks[u.r];
+            showModal('🔒', 'Rank Required!', `You need to reach ${reqRank.name} to unlock this upgrade. Keep trading to rank up!`, {name: reqRank.name, sub: `Required (you're ${ranks[G.rank].name})`, icon: reqRank.icon});
+          } else if (G.cash < u.p) {
+            showModal('💰', 'Not Enough Cash!', `You need $${u.p.toLocaleString()} to buy ${u.name}. Win more trades!`, {name: 'Insufficient Funds', sub: `Need $${(u.p - G.cash).toLocaleString()} more`, icon: '💸'});
+          } else {
+            buyUpg(u.id);
+          }
+        };
         upgEl.appendChild(d);
       });
     }
 
+    // ========== MODAL ==========
+    function showModal(icon, title, text, requirement) {
+      document.getElementById('modalIcon').textContent = icon;
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalText').textContent = text;
+      if (requirement) {
+        document.getElementById('modalRankIcon').textContent = requirement.icon;
+        document.getElementById('modalRankName').textContent = requirement.name;
+        document.getElementById('modalRankSub').textContent = requirement.sub;
+      }
+      document.getElementById('rankModal').classList.add('show');
+    }
+    
+    function closeModal() {
+      document.getElementById('rankModal').classList.remove('show');
+    }
+    
+    // Close modal on overlay click
+    document.getElementById('rankModal').onclick = (e) => {
+      if (e.target.id === 'rankModal') closeModal();
+    };
+    
     function toast(msg, type = 'info') {
       const d = document.createElement('div');
       d.className = 'toast ' + type;
