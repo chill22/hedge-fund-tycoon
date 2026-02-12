@@ -764,6 +764,16 @@
         width: 90%;
         max-width: 320px;
       }
+      
+      /* Auth modal mobile */
+      #authOverlay > div {
+        padding: 28px 20px !important;
+        margin: 10px !important;
+        max-width: 340px !important;
+      }
+      #authOverlay h1 { font-size: 1.4rem !important; }
+      #authOverlay p { font-size: 0.85rem !important; }
+      #authEmail, #authPassword { padding: 12px !important; font-size: 16px !important; }
     }
     
     /* ========== RANK REQUIRED MODAL ========== */
@@ -860,6 +870,29 @@
   </style>
 </head>
 <body>
+  <!-- Auth Modal -->
+  <div id="authOverlay" style="position:fixed;inset:0;background:rgba(6,9,15,0.98);display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.3s;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;max-width:420px;width:90%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.6);">
+      <div style="font-size:4rem;margin-bottom:16px;">🐂</div>
+      <h1 style="font-size:1.7rem;margin-bottom:8px;color:var(--gold);font-weight:700;">Bull Run Blitz</h1>
+      <p style="color:var(--text-secondary);margin-bottom:28px;font-size:0.95rem;line-height:1.5;">Master the markets. Build your empire. Trade with zero risk.</p>
+
+      <div id="authForm" style="margin-bottom:20px;">
+        <input type="email" id="authEmail" placeholder="Email address" style="width:100%;padding:14px 16px;margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:1rem;font-family:inherit;box-sizing:border-box;">
+        <input type="password" id="authPassword" placeholder="Password" style="width:100%;padding:14px 16px;margin-bottom:16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:1rem;font-family:inherit;box-sizing:border-box;">
+        <button id="authSignUp" style="width:100%;padding:14px;margin-bottom:10px;background:linear-gradient(135deg,var(--green),#2ea043);border:none;border-radius:10px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;">Create Free Account</button>
+        <button id="authSignIn" style="width:100%;padding:12px;margin-bottom:16px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text-secondary);font-size:0.95rem;cursor:pointer;font-family:inherit;transition:all 0.2s;">Already have an account? Sign In</button>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:16px;">
+        <button id="authGuest" style="width:100%;padding:14px;background:transparent;border:1px dashed var(--border);border-radius:10px;color:var(--text-dim);font-size:0.9rem;cursor:pointer;font-family:inherit;transition:all 0.2s;">🎮 Continue as Guest</button>
+      </div>
+
+      <p id="authError" style="color:var(--red);font-size:0.85rem;margin-top:16px;display:none;padding:10px;background:rgba(248,81,73,0.1);border-radius:8px;"></p>
+      <p style="color:var(--text-dim);font-size:0.65rem;margin-top:16px;line-height:1.4;">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+    </div>
+  </div>
+
   <!-- Rank Required Modal -->
   <div class="modal-overlay" id="rankModal">
     <div class="modal-content">
@@ -1836,6 +1869,87 @@
         Object.assign(G, d);
         if (G.upgrades.monitors) G.visible += 15;
       }
+    }
+
+    // ========== AUTH ==========
+    let currentUser = null;
+    let authMode = 'signup';
+
+    // Check if user is already logged in (via localStorage)
+    function checkAuth() {
+      const savedUser = localStorage.getItem('bullrunblitz_user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        hideAuthOverlay();
+        return true;
+      }
+      return false;
+    }
+
+    function hideAuthOverlay() {
+      document.getElementById('authOverlay').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('authOverlay').style.display = 'none';
+      }, 300);
+    }
+
+    function showAuthError(msg) {
+      const err = document.getElementById('authError');
+      err.textContent = msg;
+      err.style.display = 'block';
+    }
+
+    function signUp(email, password) {
+      if (!email || !password) {
+        showAuthError('Please enter email and password');
+        return;
+      }
+      if (password.length < 6) {
+        showAuthError('Password must be at least 6 characters');
+        return;
+      }
+      // Simple local auth (in production, use Supabase/Firebase)
+      const user = { email, id: 'user_' + Date.now(), created: Date.now() };
+      currentUser = user;
+      localStorage.setItem('bullrunblitz_user', JSON.stringify(user));
+      hideAuthOverlay();
+      toast('Welcome to Bull Run Blitz! 🐂', 'success');
+    }
+
+    function signIn(email, password) {
+      if (!email || !password) {
+        showAuthError('Please enter email and password');
+        return;
+      }
+      // For demo - in production, verify against backend
+      const user = { email, id: 'user_' + Date.now(), created: Date.now() };
+      currentUser = user;
+      localStorage.setItem('bullrunblitz_user', JSON.stringify(user));
+      hideAuthOverlay();
+      toast('Welcome back! 🐂', 'success');
+    }
+
+    function continueAsGuest() {
+      const guest = { email: 'guest', id: 'guest_' + Date.now(), isGuest: true };
+      currentUser = guest;
+      localStorage.setItem('bullrunblitz_user', JSON.stringify(guest));
+      hideAuthOverlay();
+      toast('Playing as Guest - Progress saved locally', 'info');
+    }
+
+    // Auth event listeners
+    document.getElementById('authSignUp').onclick = () => {
+      signUp(document.getElementById('authEmail').value, document.getElementById('authPassword').value);
+    };
+    document.getElementById('authSignIn').onclick = () => {
+      signIn(document.getElementById('authEmail').value, document.getElementById('authPassword').value);
+    };
+    document.getElementById('authGuest').onclick = continueAsGuest;
+
+    // Check auth on load
+    if (!checkAuth()) {
+      // Show auth overlay
+      document.getElementById('authOverlay').style.opacity = '1';
     }
 
     // ========== EVENTS ==========
