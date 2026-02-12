@@ -923,199 +923,326 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // ========== MARKET ENGINE ==========
-    // Volatile but with learnable patterns
-    const M = { 
-      trend: 0, 
-      trendDur: 0, 
-      vol: 0.008, // Increased base volatility
-      mom: 0, 
-      sup: 95, 
-      res: 105, 
-      regime: 'normal', 
-      regDur: 0,
-      pattern: null, // Current pattern type
-      patternDur: 0,
-      cycle: 0, // For sinusoidal patterns
+    // ========== REALISTIC MARKET ENGINE ==========
+    // Simulates real 10-second candlestick price action
+    const M = {
+      // Price levels
+      price: 100,
+      vwap: 100,
+      
+      // Market regime
+      regime: 'balanced', // balanced, trending, ranging, volatile
+      regimeDur: 0,
+      
+      // Microstructure
+      spread: 0.02, // Bid-ask spread
+      volume: 1,
+      volumeTrend: 0,
+      
+      // Momentum & trends
+      microTrend: 0,
+      macroTrend: 0,
+      trendStrength: 0,
+      
+      // Support/resistance levels (round numbers)
+      levels: [],
+      
+      // Volatility clustering
+      baseVol: 0.0008, // Base volatility per tick (10-sec chart)
+      currentVol: 0.0008,
+      volRegime: 'normal', // normal, high, low
+      
+      // Order flow
+      buyPressure: 0,
+      sellPressure: 0,
+      
+      // Time-based effects
+      timeOfDay: 0,
+      
+      // Pattern state
+      pattern: null,
+      patternProgress: 0,
+      
       lastClose: 100
     };
 
-    // Pattern types that players can learn to recognize
-    const PATTERNS = {
-      'breakout': { vol: 0.012, dur: [8, 15], desc: 'Sharp move after consolidation' },
-      'flag': { vol: 0.006, dur: [12, 20], desc: 'Brief pause in strong trend' },
-      'double_top': { vol: 0.009, dur: [15, 25], desc: 'Two peaks at similar level' },
-      'double_bottom': { vol: 0.009, dur: [15, 25], desc: 'Two lows at similar level' },
-      'ranging': { vol: 0.007, dur: [20, 35], desc: 'Sideways between support/resistance' },
-      'trending': { vol: 0.01, dur: [18, 30], desc: 'Strong directional movement' },
-      'volatile': { vol: 0.015, dur: [10, 18], desc: 'Wild swings, hard to predict' }
+    // Market regimes with realistic characteristics
+    const REGIMES = {
+      balanced: { volMult: 1.0, trendDecay: 0.95, meanRev: 0.02, desc: 'Normal two-way action' },
+      trending: { volMult: 1.3, trendDecay: 0.99, meanRev: 0.005, desc: 'Directional movement' },
+      ranging: { volMult: 0.7, trendDecay: 0.90, meanRev: 0.05, desc: 'Stuck in a range' },
+      volatile: { volMult: 2.0, trendDecay: 0.97, meanRev: 0.01, desc: 'Wild swings' },
+      breakout: { volMult: 1.5, trendDecay: 0.98, meanRev: 0.01, desc: 'Breaking levels' }
     };
 
+    // Realistic patterns for 10-second charts
+    const PATTERNS = {
+      none: { prob: 0.4, dur: [5, 15] },
+      micro_trend: { prob: 0.15, dur: [8, 20] }, // 3-6 candles
+      pullback: { prob: 0.15, dur: [3, 8] }, // Quick pullback in trend
+      consolidation: { prob: 0.12, dur: [10, 25] }, // Tight range
+      spike: { prob: 0.08, dur: [2, 5] }, // Sudden move
+      reversal: { prob: 0.07, dur: [5, 12] }, // V-shaped
+      wick_hunt: { prob: 0.03, dur: [2, 4] } // Stop hunt with quick reversal
+    };
+
+    function initLevels() {
+      // Generate realistic support/resistance at round numbers
+      M.levels = [];
+      const base = Math.floor(M.price / 5) * 5;
+      for (let i = -20; i <= 20; i++) {
+        const level = base + i * 5;
+        if (level > 0) {
+          M.levels.push({
+            price: level,
+            strength: Math.random() * 0.5 + 0.5,
+            touched: 0,
+            broken: false
+          });
+        }
+      }
+    }
+    initLevels();
+
     function selectPattern() {
-      const keys = Object.keys(PATTERNS);
       const r = Math.random();
-      // Weight patterns - some more common than others
-      if (r < 0.30) return 'ranging'; // 30% of time
-      if (r < 0.50) return 'trending'; // 20% of time
-      if (r < 0.65) return 'breakout'; // 15% of time
-      if (r < 0.75) return 'flag'; // 10% of time
-      if (r < 0.85) return 'double_top'; // 10% of time
-      if (r < 0.95) return 'double_bottom'; // 10% of time
-      return 'volatile'; // 5% of time - chaotic
+      let cum = 0;
+      for (const [name, cfg] of Object.entries(PATTERNS)) {
+        cum += cfg.prob;
+        if (r < cum) return name;
+      }
+      return 'none';
+    }
+
+    function updateRegime() {
+      if (--M.regimeDur <= 0) {
+        // Select new regime based on current conditions
+        const r = Math.random();
+        if (r < 0.35) M.regime = 'balanced';
+        else if (r < 0.55) M.regime = 'trending';
+        else if (r < 0.75) M.regime = 'ranging';
+        else if (r < 0.90) M.regime = 'volatile';
+        else M.regime = 'breakout';
+        
+        M.regimeDur = 20 + Math.floor(Math.random() * 40);
+        
+        // Set trend based on regime
+        const cfg = REGIMES[M.regime];
+        if (M.regime === 'trending' || M.regime === 'breakout') {
+          M.macroTrend = (Math.random() > 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.4);
+          M.trendStrength = 0.6 + Math.random() * 0.4;
+        } else if (M.regime === 'ranging') {
+          M.macroTrend = (Math.random() - 0.5) * 0.2;
+          M.trendStrength = 0.2;
+        } else {
+          M.macroTrend *= 0.5;
+          M.trendStrength = Math.max(0.1, M.trendStrength * 0.7);
+        }
+        
+        M.currentVol = M.baseVol * cfg.volMult;
+      }
+      
+      // Decay trend
+      const cfg = REGIMES[M.regime];
+      M.macroTrend *= cfg.trendDecay;
+      M.microTrend *= 0.9;
+      
+      // Add noise to trend
+      M.macroTrend += (Math.random() - 0.5) * 0.02;
+    }
+
+    function updatePattern() {
+      if (--M.patternProgress <= 0 || M.pattern === 'none') {
+        M.pattern = selectPattern();
+        const cfg = PATTERNS[M.pattern];
+        M.patternProgress = cfg.dur[0] + Math.floor(Math.random() * (cfg.dur[1] - cfg.dur[0]));
+      }
+    }
+
+    function calculateLevelEffect(price) {
+      let effect = 0;
+      M.levels.forEach(level => {
+        const dist = Math.abs(price - level.price) / price;
+        if (dist < 0.005) { // Within 0.5%
+          // Price is near a level - bounce or break
+          const bounceProb = level.strength * (1 - level.touched * 0.1);
+          if (Math.random() < bounceProb && !level.broken) {
+            // Bounce off level
+            effect += (price < level.price ? 0.001 : -0.001) * level.strength;
+          } else {
+            // Level weakening
+            level.strength *= 0.95;
+            if (level.strength < 0.3) level.broken = true;
+          }
+          level.touched++;
+        }
+      });
+      return effect;
+    }
+
+    function fatTailRandom() {
+      // Generate fat-tailed distribution (more extreme values than normal)
+      const u = Math.random();
+      const v = Math.random();
+      // Box-Muller with fatter tails
+      const normal = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+      // Mix normal with occasional extreme moves
+      if (Math.random() < 0.05) {
+        return normal * 3; // 5% chance of 3x move
+      }
+      return normal * (0.5 + Math.random() * 0.5);
     }
 
     function updateMarket() {
-      M.cycle += 0.1; // Increment cycle for wave patterns
+      updateRegime();
+      updatePattern();
       
-      // Pattern management
-      if (--M.patternDur <= 0) {
-        M.pattern = selectPattern();
-        const p = PATTERNS[M.pattern];
-        M.vol = p.vol;
-        M.patternDur = p.dur[0] + Math.floor(Math.random() * (p.dur[1] - p.dur[0]));
-        
-        // Set trend based on pattern
-        switch(M.pattern) {
-          case 'breakout':
-            M.trend = (Math.random() > 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.4);
-            break;
-          case 'flag':
-            M.trend = M.trend * 0.2; // Pause - weak trend
-            break;
-          case 'double_top':
-            M.trend = 0.1; // Weak upward then reversal
-            break;
-          case 'double_bottom':
-            M.trend = -0.1; // Weak downward then reversal
-            break;
-          case 'ranging':
-            M.trend = (Math.random() - 0.5) * 0.2; // Very weak/no trend
-            break;
-          case 'trending':
-            M.trend = (Math.random() > 0.5 ? 1 : -1) * (0.4 + Math.random() * 0.3);
-            break;
-          case 'volatile':
-            M.trend = (Math.random() - 0.5) * 0.8; // Wild swings
-            break;
-        }
-      }
+      // Update volume with mean reversion
+      M.volumeTrend += (Math.random() - 0.5) * 0.3;
+      M.volumeTrend *= 0.9;
+      M.volume = Math.max(0.3, Math.min(3, 1 + M.volumeTrend + (Math.random() - 0.5) * 0.5));
       
-      // Gradually decay trend and add noise
-      M.trend *= 0.98;
-      M.trend += (Math.random() - 0.5) * 0.05;
-      
-      // Dynamic support/resistance updates
-      if (G.price > M.res * 1.01) { 
-        M.sup = M.res; 
-        M.res = G.price * (1.02 + Math.random() * 0.02); 
-        if (M.trend < 0.1) M.trend = 0.15;
-      }
-      else if (G.price < M.sup * 0.99) { 
-        M.res = M.sup; 
-        M.sup = G.price * (0.98 - Math.random() * 0.02); 
-        if (M.trend > -0.1) M.trend = -0.15;
-      }
-      
-      // Pull toward support/resistance midline when ranging
-      if (M.pattern === 'ranging') {
-        const mid = (M.sup + M.res) / 2;
-        const pull = (mid - G.price) / mid * 0.02;
-        M.trend += pull;
-      }
+      // Higher volume = more volatility
+      const volBoost = 1 + (M.volume - 1) * 0.3;
+      M.currentVol = REGIMES[M.regime].volMult * M.baseVol * volBoost;
     }
 
     function genCandle() {
       updateMarket();
-      const o = G.price;
+      const o = M.price;
       let h = o, l = o, p = o;
       
-      // Generate 40 ticks per candle for realistic movement
-      const ticks = 40;
+      // 10-second candle: 100 ticks at 100ms each
+      const ticks = 100;
+      const tickVol = M.currentVol / Math.sqrt(ticks);
+      
+      // Pattern-specific setup
+      let patternBias = 0;
+      let patternVolMult = 1;
+      
+      switch(M.pattern) {
+        case 'micro_trend':
+          patternBias = (Math.random() > 0.5 ? 1 : -1) * 0.0003;
+          break;
+        case 'pullback':
+          patternBias = -Math.sign(M.macroTrend || 1) * 0.0004;
+          patternVolMult = 0.8;
+          break;
+        case 'consolidation':
+          patternBias = 0;
+          patternVolMult = 0.5;
+          break;
+        case 'spike':
+          patternBias = (Math.random() > 0.5 ? 1 : -1) * 0.001;
+          patternVolMult = 2.0;
+          break;
+        case 'reversal':
+          patternBias = -Math.sign(M.macroTrend || 1) * 0.0005 * (M.patternProgress / 5);
+          break;
+        case 'wick_hunt':
+          // Create long wick then reverse
+          patternBias = (Math.random() > 0.5 ? 1 : -1) * 0.0015;
+          break;
+      }
+      
+      // Generate tick data
       for (let i = 0; i < ticks; i++) {
         const progress = i / ticks;
         
-        // Base movement: random + trend + momentum
-        let d = (Math.random() - 0.5) * 2 * M.vol + M.trend * 0.001;
+        // Fat-tailed random move
+        let move = fatTailRandom() * tickVol * patternVolMult;
         
-        // Add pattern-specific behaviors
-        switch(M.pattern) {
-          case 'breakout':
-            // Early consolidation, late explosive move
-            if (progress > 0.6) {
-              d += M.trend * 0.003; // Accelerate
-            } else {
-              d *= 0.5; // Tight range early
-            }
-            break;
-            
-          case 'flag':
-            // Opposite to trend initially, then continue
-            if (progress < 0.4) {
-              d -= M.trend * 0.002; // Counter-trend
-            } else {
-              d += M.trend * 0.003; // Resume
-            }
-            break;
-            
-          case 'double_top':
-            // Push up twice
-            if (progress < 0.3 || (progress > 0.5 && progress < 0.7)) {
-              d += 0.004; // Up moves
-            } else if (progress > 0.85) {
-              d -= 0.005; // Breakdown
-            }
-            break;
-            
-          case 'double_bottom':
-            // Push down twice
-            if (progress < 0.3 || (progress > 0.5 && progress < 0.7)) {
-              d -= 0.004; // Down moves
-            } else if (progress > 0.85) {
-              d += 0.005; // Breakup
-            }
-            break;
-            
-          case 'ranging':
-            // Mean reversion within bounds
-            const rangePos = (p - M.sup) / (M.res - M.sup);
-            if (rangePos > 0.85) d -= 0.003; // Bounce off resistance
-            if (rangePos < 0.15) d += 0.003; // Bounce off support
-            // Add some sine wave for rhythm
-            d += Math.sin(M.cycle + progress * 6) * 0.001;
-            break;
-            
-          case 'trending':
-            // Strong trend with shallow pullbacks
-            d += M.trend * 0.002;
-            if (Math.random() < 0.2) d -= M.trend * 0.004; // Occasional pullback
-            break;
-            
-          case 'volatile':
-            // Chaotic with occasional spikes
-            d *= 1.5;
-            if (Math.random() < 0.08) d += (Math.random() - 0.5) * 0.02; // Spike
-            break;
+        // Add pattern bias
+        move += patternBias;
+        
+        // Add micro-trend component
+        M.microTrend += (Math.random() - 0.5) * 0.0001;
+        M.microTrend *= 0.95;
+        move += M.microTrend;
+        
+        // Add macro trend component
+        move += M.macroTrend * 0.00005;
+        
+        // Mean reversion to VWAP
+        const vwapDist = (p - M.vwap) / M.vwap;
+        const cfg = REGIMES[M.regime];
+        move -= vwapDist * cfg.meanRev * 0.01;
+        
+        // Support/resistance effect
+        move += calculateLevelEffect(p);
+        
+        // Market impact (larger moves when breaking levels)
+        const levelBreak = M.levels.find(l => Math.abs(p - l.price) < 0.05 && l.broken);
+        if (levelBreak && Math.random() < 0.3) {
+          move += Math.sign(move) * 0.0005; // Acceleration after break
         }
         
-        // Momentum persistence
-        M.mom = M.mom * 0.92 + d * 0.08;
-        d += M.mom * 0.3;
-        
-        // Apply price change
-        p *= 1 + d;
-        h = Math.max(h, p); 
+        // Update price
+        p *= 1 + move;
+        h = Math.max(h, p);
         l = Math.min(l, p);
+        
+        // Update VWAP (volume-weighted)
+        M.vwap = (M.vwap * (i + 1) + p * M.volume) / (i + 1 + M.volume);
       }
       
-      // Ensure body has some size (avoid doji-only charts)
-      if (Math.abs(p - o) / o < 0.002) {
-        p = o * (1 + (Math.random() - 0.5) * 0.004);
+      // Pattern completion effects
+      if (M.pattern === 'wick_hunt' && M.patternProgress <= 1) {
+        // Snap back after wick
+        p = o + (o - h) * 0.7; // Retrace most of the wick
       }
       
-      G.price = p; 
+      // Ensure minimum body size (avoid too many dojis)
+      if (Math.abs(p - o) / o < 0.0002) {
+        p = o * (1 + (Math.random() - 0.5) * 0.0005);
+      }
+      
+      // Realistic wick extension
+      const bodyRange = Math.abs(p - o);
+      const totalRange = h - l;
+      
+      // 70% of candles should have visible wicks
+      if (totalRange < bodyRange * 1.2) {
+        const wickExt = bodyRange * (0.3 + Math.random() * 0.5);
+        if (p > o) {
+          h = Math.max(h, p + wickExt * Math.random());
+          l = Math.min(l, o - wickExt * Math.random() * 0.5);
+        } else {
+          l = Math.min(l, p - wickExt * Math.random());
+          h = Math.max(h, o + wickExt * Math.random() * 0.5);
+        }
+      }
+      
+      M.price = p;
+      G.price = p;
       G.tick++;
       M.lastClose = p;
-      return { o, h, l, c: p, t: Date.now(), pattern: M.pattern };
+      
+      // Occasionally add new levels
+      if (Math.random() < 0.02) {
+        const newLevel = Math.round(p / 5) * 5;
+        if (!M.levels.find(l => Math.abs(l.price - newLevel) < 1)) {
+          M.levels.push({
+            price: newLevel,
+            strength: 0.8,
+            touched: 0,
+            broken: false
+          });
+          // Remove old levels
+          if (M.levels.length > 40) M.levels.shift();
+        }
+      }
+      
+      return { 
+        o, 
+        h: Math.max(o, p, h), 
+        l: Math.min(o, p, l), 
+        c: p, 
+        v: M.volume * (100 + Math.random() * 50),
+        t: Date.now(), 
+        pattern: M.pattern,
+        regime: M.regime
+      };
     }
 
     // ========== DRAW ==========
@@ -1132,14 +1259,18 @@
         minP = Math.min(minP, c.l); 
         maxP = Math.max(maxP, c.h); 
       });
-      const pad = (maxP - minP) * 0.12 || 1; // Slightly more padding for volatile moves
+      const pad = (maxP - minP) * 0.08 || 0.5; // Tighter padding for 10-sec chart
       minP -= pad; 
       maxP += pad;
-      const range = maxP - minP, 
-            H = canvas.height - 28, 
-            W = canvas.width - 50;
+      
+      // Reserve space for volume at bottom
+      const volHeight = G.upgrades.patternRec ? 50 : 0; // Show volume if Pattern AI unlocked
+      const chartHeight = canvas.height - 28 - volHeight;
+      const range = maxP - minP;
+      const H = chartHeight - 14;
+      const W = canvas.width - 50;
 
-      // Draw grid lines
+      // Draw grid lines (price)
       ctx.strokeStyle = '#21262d'; 
       ctx.lineWidth = 1;
       for (let i = 0; i <= 4; i++) {
@@ -1152,6 +1283,25 @@
         ctx.font = '10px JetBrains Mono'; 
         ctx.textAlign = 'right';
         ctx.fillText('$' + (maxP - (range / 4) * i).toFixed(2), 48, y + 3);
+      }
+      
+      // Draw VWAP line if pattern AI unlocked
+      if (G.upgrades.patternRec && M.vwap) {
+        const vwapY = 14 + ((maxP - M.vwap) / range) * H;
+        ctx.strokeStyle = 'rgba(210, 153, 34, 0.6)';
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(50, vwapY);
+        ctx.lineTo(canvas.width, vwapY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // VWAP label
+        ctx.fillStyle = 'rgba(210, 153, 34, 0.8)';
+        ctx.font = '9px JetBrains Mono';
+        ctx.textAlign = 'left';
+        ctx.fillText('VWAP', 52, vwapY - 3);
       }
 
       // FIXED: Proper x-coordinate calculation
@@ -1192,14 +1342,41 @@
       
       // Draw current pattern indicator if player has pattern recognition upgrade
       if (M.pattern && G.upgrades.patternRec) {
-        const p = PATTERNS[M.pattern];
         ctx.fillStyle = 'rgba(210, 153, 34, 0.9)';
         ctx.font = 'bold 11px JetBrains Mono';
         ctx.textAlign = 'left';
         ctx.fillText(`Pattern: ${M.pattern.replace('_', ' ').toUpperCase()}`, 60, 26);
         ctx.fillStyle = 'rgba(139, 148, 158, 0.8)';
         ctx.font = '9px JetBrains Mono';
-        ctx.fillText(p.desc, 60, 38);
+        ctx.fillText(`Regime: ${M.regime} | VWAP: $${M.vwap.toFixed(2)}`, 60, 38);
+      }
+      
+      // Draw volume bars at bottom
+      const volH = 40;
+      const volBaseY = canvas.height - 14 - volH;
+      let maxVol = 0;
+      vis.forEach(c => { if (c.v) maxVol = Math.max(maxVol, c.v); });
+      
+      if (maxVol > 0 && G.upgrades.patternRec) {
+        // Volume background
+        ctx.fillStyle = 'rgba(48, 54, 61, 0.3)';
+        ctx.fillRect(50, volBaseY, canvas.width - 50, volH);
+        
+        vis.forEach((c, i) => {
+          const x = startX - (vis.length - 1 - i) * totalCandleWidth;
+          if (c.v) {
+            const vh = (c.v / maxVol) * (volH - 8);
+            const green = c.c >= c.o;
+            ctx.fillStyle = green ? 'rgba(63, 185, 80, 0.5)' : 'rgba(248, 81, 73, 0.5)';
+            ctx.fillRect(x, volBaseY + volH - vh, cw, vh);
+          }
+        });
+        
+        // Volume label
+        ctx.fillStyle = '#8b949e';
+        ctx.font = '9px JetBrains Mono';
+        ctx.textAlign = 'left';
+        ctx.fillText('VOL', 52, volBaseY + 12);
       }
 
       if (G.pos) {
