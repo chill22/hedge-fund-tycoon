@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bull Run Blitz - The Ultimate Trading Simulator Game</title>
+  <meta name="description" content="Build your trading empire from $1K to billions. The most addicting trading simulator. Practice with zero risk.">
+  <meta property="og:title" content="Bull Run Blitz - Build Your Trading Empire">
+  <meta property="og:description" content="From retail trader to Wall Street legend. No real money risk.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐂</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #06090f;
+      --card: #0d1117;
+      --border: #21262d;
+      --green: #3fb950;
+      --green-glow: rgba(63, 185, 80, 0.3);
+      --red: #f85149;
+      --gold: #d29922;
+      --blue: #58a6ff;
+      --purple: #a371f7;
+      --text: #f0f6fc;
+      --dim: #8b949e;
+    }
+    body {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+    /* Nav */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 0;
+      background: rgba(6, 9, 15, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    nav .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .nav-logo span { font-size: 1.5rem; }
+    .nav-links { display: flex; gap: 30px; align-items: center; }
+    .nav-links a {
+      color: var(--dim);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      padding: 10px 20px;
+      background: var(--green);
+      color: #000;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 4px 20px var(--green-glow); }
+
+    /* Hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 20px 80px;
+      background:
+        radial-gradient(ellipse at top, rgba(63, 185, 80, 0.12), transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(88, 166, 255, 0.08), transparent 50%);
+    }
+    .hero-content { max-width: 800px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: linear-gradient(135deg, var(--green), #2ea043);
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 28px;
+      animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--green-glow); }
+      50% { transform: scale(1.02); box-shadow: 0 0 20px 5px var(--green-glow); }
+    }
+    h1 {
+      font-size: clamp(2.8rem, 8vw, 5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      margin-bottom: 24px;
+    }
+    h1 .gradient {
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.3rem;
+      color: var(--dim);
+      max-width: 600px;
+      margin: 0 auto 40px;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.25s;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green), #2ea043);
+      color: #fff;
+      box-shadow: 0 4px 25px var(--green-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 35px var(--green-glow);
+    }
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--blue);
+      background: rgba(88, 166, 255, 0.1);
+    }
+    .social-proof {
+      display: flex;
+      gap: 50px;
+      justify-content: center;
+      margin-top: 60px;
+    }
+    .proof-item { text-align: center; }
+    .proof-num {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+    .proof-label { font-size: 0.9rem; color: var(--dim); }
+
+    /* Features */
+    .features {
+      padding: 120px 20px;
+      background: var(--card);
+    }
+    .section-header {
+      text-align: center;
+      margin-bottom: 70px;
+    }
+    .section-header h2 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .section-header p {
+      font-size: 1.15rem;
+      color: var(--dim);
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+    }
+    .feature {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.3s;
+    }
+    .feature:hover {
+      border-color: var(--blue);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    .feature-icon {
+      font-size: 2.8rem;
+      margin-bottom: 20px;
+    }
+    .feature h3 {
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+    }
+    .feature p {
+      color: var(--dim);
+      font-size: 0.95rem;
+    }
+
+    /* How */
+    .how {
+      padding: 120px 20px;
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 40px;
+      margin-top: 60px;
+    }
+    .step {
+      text-align: center;
+    }
+    .step-num {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin: 0 auto 20px;
+    }
+    .step h3 { font-size: 1.2rem; margin-bottom: 10px; }
+    .step p { color: var(--dim); font-size: 0.95rem; }
+
+    /* Pricing */
+    .pricing {
+      padding: 120px 20px;
+      background: var(--card);
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 28px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .price-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      position: relative;
+      transition: all 0.3s;
+    }
+    .price-card.pop {
+      border-color: var(--gold);
+      transform: scale(1.04);
+    }
+    .price-card.pop::before {
+      content: '🔥 BEST VALUE';
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--gold), #f0883e);
+      color: #000;
+      padding: 6px 20px;
+      border-radius: 50px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .price-card:hover { border-color: var(--blue); }
+    .price-name { font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; }
+    .price-amount {
+      font-size: 3.2rem;
+      font-weight: 800;
+      margin: 24px 0;
+    }
+    .price-amount span { font-size: 1rem; color: var(--dim); font-weight: 400; }
+    .price-amount.free { color: var(--green); }
+    .price-features {
+      list-style: none;
+      text-align: left;
+      margin: 30px 0;
+    }
+    .price-features li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+    .price-features li:last-child { border-bottom: none; }
+    .price-features .y { color: var(--green); }
+    .price-features .n { color: var(--red); }
+    .price-card .btn { width: 100%; margin-top: 20px; justify-content: center; }
+
+    /* CTA */
+    .cta {
+      padding: 120px 20px;
+      text-align: center;
+      background:
+        radial-gradient(ellipse at center, rgba(63, 185, 80, 0.1), transparent 60%);
+    }
+    .cta h2 { font-size: 2.8rem; margin-bottom: 20px; }
+    .cta p { color: var(--dim); font-size: 1.2rem; margin-bottom: 40px; }
+
+    /* Footer */
+    footer {
+      padding: 50px 20px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      color: var(--dim);
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .price-card.pop { transform: scale(1); }
+      .social-proof { gap: 30px; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <a href="#" class="nav-logo"><span>🐂</span> Bull Run Blitz</a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="game.html" class="nav-cta">Play Now</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="badge">🚀 Now Live • Join 10K+ Traders</div>
+      <h1>Trade Like a <span class="gradient">Legend</span></h1>
+      <p>Build your hedge fund empire from $1,000 to billions. The most addicting trading simulator—zero real money risk.</p>
+      <div class="hero-buttons">
+        <a href="game.html" class="btn btn-primary">🐂 Start Trading Free</a>
+        <a href="#features" class="btn btn-secondary">See Features</a>
+      </div>
+      <div class="social-proof">
+        <div class="proof-item">
+          <div class="proof-num">10K+</div>
+          <div class="proof-label">Active Traders</div>
+        </div>
+        <div class="proof-item">
+          <div class="proof-num">$50B+</div>
+          <div class="proof-label">Virtual Traded</div>
+        </div>
+        <div class="proof-item">
+          <div class="proof-num">4.9★</div>
+          <div class="proof-label">User Rating</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Built for Traders</h2>
+        <p>Everything you need to sharpen your skills without the risk</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature">
+          <div class="feature-icon">📊</div>
+          <h3>Realistic Charts</h3>
+          <p>Smooth 60fps candlesticks with real patterns—trends, breakouts, support & resistance. Feels like the real thing.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔥</div>
+          <h3>Win Streaks</h3>
+          <p>Build momentum with satisfying streak bonuses. Hit 10 wins in a row and feel unstoppable.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🏆</div>
+          <h3>Rank System</h3>
+          <p>Progress from Retail Trader to Market Legend. 7 ranks, each with new abilities and perks.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">⚡</div>
+          <h3>Power-Ups</h3>
+          <p>Rewind mistakes, slow-mo for clutch moments, insider previews, and loss shields.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💼</div>
+          <h3>Build Your Fund</h3>
+          <p>Attract investors, grow your AUM, and transform from solo trader to hedge fund boss.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🎵</div>
+          <h3>Satisfying Audio</h3>
+          <p>Every trade, every win, every achievement—crisp sound design that makes you feel the market.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how">
+    <div class="container">
+      <div class="section-header">
+        <h2>How It Works</h2>
+        <p>Zero to hedge fund hero in four steps</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Start Small</h3>
+          <p>Begin with $1,000. Learn charts, time your entries.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Build Skills</h3>
+          <p>Master longs & shorts. Stack winning streaks.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Rank Up</h3>
+          <p>Unlock power-ups, upgrades, and new abilities.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Build Empire</h3>
+          <p>Attract investors. Manage billions. Become legend.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-header">
+        <h2>Simple Pricing</h2>
+        <p>Start free, upgrade when you're hooked</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-name">Free</div>
+          <div class="price-amount free">$0</div>
+          <ul class="price-features">
+            <li><span class="y">✓</span> Full gameplay</li>
+            <li><span class="y">✓</span> First 3 ranks</li>
+            <li><span class="y">✓</span> Basic power-ups</li>
+            <li><span class="n">✗</span> Resets at $10K</li>
+            <li><span class="n">✗</span> No save progress</li>
+          </ul>
+          <a href="game.html" class="btn btn-secondary">Play Free</a>
+        </div>
+        <div class="price-card pop">
+          <div class="price-name">Pro Trader</div>
+          <div class="price-amount">$4.99 <span>once</span></div>
+          <ul class="price-features">
+            <li><span class="y">✓</span> Unlimited gameplay</li>
+            <li><span class="y">✓</span> All 7 ranks</li>
+            <li><span class="y">✓</span> All power-ups</li>
+            <li><span class="y">✓</span> Save progress</li>
+            <li><span class="y">✓</span> All achievements</li>
+          </ul>
+          <a href="#" class="btn btn-primary">🐂 Unlock Now</a>
+        </div>
+        <div class="price-card">
+          <div class="price-name">Whale</div>
+          <div class="price-amount">$14.99 <span>once</span></div>
+          <ul class="price-features">
+            <li><span class="y">✓</span> Everything in Pro</li>
+            <li><span class="y">✓</span> Start with $10K</li>
+            <li><span class="y">✓</span> Exclusive themes</li>
+            <li><span class="y">✓</span> 5x power-up pack</li>
+            <li><span class="y">✓</span> Priority support</li>
+          </ul>
+          <a href="#" class="btn btn-secondary">Go Whale 🐋</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>Ready to Dominate?</h2>
+    <p>Join 10,000+ traders. No credit card required.</p>
+    <a href="game.html" class="btn btn-primary">🐂 Start Trading Now</a>
+  </section>
+
+  <footer>
+    <p>© 2026 Bull Run Blitz. Built for traders, by traders.</p>
+    <p style="margin-top: 12px;">
+      <a href="#">Terms</a> · <a href="#">Privacy</a> · <a href="mailto:hello@bullrunblitz.com">Contact</a>
+    </p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bull Run Blitz - Trading Simulator Game</title>
+  <meta name="description" content="The most addicting trading simulator. Build your empire from $1K to billions. No real money risk.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐂</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #06090f;
+      --card: #0d1117;
+      --card-hover: #161b22;
+      --border: #21262d;
+      --green: #3fb950;
+      --green-bright: #56d364;
+      --green-glow: rgba(63, 185, 80, 0.4);
+      --red: #f85149;
+      --red-glow: rgba(248, 81, 73, 0.4);
+      --gold: #d29922;
+      --gold-bright: #e3b341;
+      --blue: #58a6ff;
+      --purple: #a371f7;
+      --text: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-dim: #484f58;
+    }
+    body {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      background-image: 
+        radial-gradient(ellipse at top left, rgba(63, 185, 80, 0.08), transparent 40%),
+        radial-gradient(ellipse at bottom right, rgba(88, 166, 255, 0.05), transparent 40%);
+    }
+    
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 20px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      height: 52px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      font-size: 1.6rem;
+      filter: drop-shadow(0 0 8px var(--green-glow));
+    }
+    .logo-text {
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--green-bright), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+    .stat {
+      text-align: center;
+      padding: 4px 12px;
+      background: var(--card-hover);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .stat-label {
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .stat-value.green { color: var(--green-bright); }
+    .stat-value.red { color: var(--red); }
+    .stat-value.gold { color: var(--gold-bright); }
+    
+    .streak-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .streak-badge.hot {
+      background: linear-gradient(135deg, #ff6b35, #f7931e);
+      border-color: #ff6b35;
+      color: #000;
+      animation: glow 1.5s ease infinite alternate;
+    }
+    @keyframes glow {
+      from { box-shadow: 0 0 5px #ff6b35; }
+      to { box-shadow: 0 0 20px #ff6b35, 0 0 30px #f7931e; }
+    }
+    
+    /* Main Layout */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 260px;
+      gap: 12px;
+      padding: 12px;
+      height: calc(100vh - 52px);
+      overflow: hidden;
+    }
+    .chart-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+    
+    /* Chart */
+    .chart-container {
+      flex: 1;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 12px;
+      position: relative;
+      min-height: 0;
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .ticker-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .ticker {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ticker-badge {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      background: var(--card-hover);
+      border-radius: 4px;
+      color: var(--text-secondary);
+    }
+    .price-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+    .price-change {
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    .price-change.up { background: var(--green-glow); color: var(--green-bright); }
+    .price-change.down { background: var(--red-glow); color: var(--red); }
+    
+    .controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .control-btn {
+      padding: 6px 12px;
+      background: var(--card-hover);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .control-btn:hover { background: var(--border); color: var(--text); }
+    .control-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    
+    #chartCanvas {
+      width: 100%;
+      height: calc(100% - 44px);
+      border-radius: 8px;
+    }
+    
+    /* Trading Panel */
+    .trade-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 14px;
+    }
+    .trade-col h4 {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .trade-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .size-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .size-row input {
+      flex: 1;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+    }
+    .size-row input:focus { outline: none; border-color: var(--blue); }
+    .size-presets {
+      display: flex;
+      gap: 4px;
+    }
+    .preset-btn {
+      padding: 6px 8px;
+      background: var(--card-hover);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .preset-btn:hover { border-color: var(--blue); color: var(--blue); }
+    
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      grid-column: span 2;
+    }
+    .action-btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+    .action-btn.long {
+      background: linear-gradient(135deg, var(--green), #2ea043);
+      color: #fff;
+    }
+    .action-btn.long:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px var(--green-glow);
+    }
+    .action-btn.short {
+      background: linear-gradient(135deg, var(--red), #da3633);
+      color: #fff;
+    }
+    .action-btn.short:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px var(--red-glow);
+    }
+    .action-btn.close {
+      background: var(--card-hover);
+      border: 1px solid var(--border);
+      color: var(--text);
+      flex: 0.5;
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .panel {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 14px;
+    }
+    .panel-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    /* Rank */
+    .rank-card {
+      text-align: center;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--card-hover), var(--bg));
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+    .rank-icon { font-size: 2.2rem; margin-bottom: 6px; }
+    .rank-name {
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--gold-bright), #f0883e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .rank-sub { font-size: 0.7rem; color: var(--text-dim); }
+    .progress-track {
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 10px 0 6px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue), var(--purple));
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+    
+    /* Achievements */
+    .achievements-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .ach-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--bg);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      opacity: 0.25;
+      transition: all 0.3s;
+      cursor: help;
+    }
+    .ach-icon.unlocked {
+      opacity: 1;
+      background: linear-gradient(135deg, var(--gold), #f0883e);
+      box-shadow: 0 2px 10px rgba(210, 153, 34, 0.4);
+    }
+    
+    /* Powerups */
+    .powerups-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .powerup {
+      padding: 10px 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .powerup:hover:not(.locked):not(.cooldown) {
+      border-color: var(--purple);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(163, 113, 247, 0.2);
+    }
+    .powerup.locked { opacity: 0.3; cursor: not-allowed; }
+    .powerup.cooldown { opacity: 0.5; cursor: not-allowed; }
+    .powerup-icon { font-size: 1.3rem; margin-bottom: 4px; }
+    .powerup-name { font-size: 0.6rem; font-weight: 500; color: var(--text-secondary); }
+    .powerup-count { font-size: 0.55rem; color: var(--purple); margin-top: 2px; }
+    
+    /* Upgrades */
+    .upgrade {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .upgrade:hover:not(.owned):not(.locked) { border-color: var(--gold); }
+    .upgrade.owned { border-color: var(--green); background: rgba(63, 185, 80, 0.1); }
+    .upgrade.locked { opacity: 0.35; cursor: not-allowed; }
+    .upgrade-icon { font-size: 1.2rem; }
+    .upgrade-info { flex: 1; }
+    .upgrade-name { font-size: 0.8rem; font-weight: 600; }
+    .upgrade-desc { font-size: 0.6rem; color: var(--text-dim); }
+    .upgrade-cost { font-size: 0.75rem; font-weight: 600; color: var(--gold-bright); }
+    .upgrade-cost.done { color: var(--green-bright); }
+    
+    /* Rewarded Ad Button */
+    .ad-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .ad-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4); }
+    .ad-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    
+    /* Notifications */
+    .toast {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      padding: 14px 22px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      z-index: 1000;
+      animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 300px;
+      font-weight: 500;
+    }
+    .toast.success { border-color: var(--green); }
+    .toast.error { border-color: var(--red); }
+    .toast.achievement { 
+      border-color: var(--gold); 
+      background: linear-gradient(135deg, var(--card), rgba(210, 153, 34, 0.15));
+    }
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .flash-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 500;
+      animation: flash 0.35s ease-out;
+    }
+    .flash-overlay.win { background: radial-gradient(circle at center, var(--green-glow), transparent 70%); }
+    .flash-overlay.lose { background: radial-gradient(circle at center, var(--red-glow), transparent 70%); }
+    @keyframes flash {
+      0% { opacity: 0.7; }
+      100% { opacity: 0; }
+    }
+    
+    /* Tooltip */
+    .chart-tooltip {
+      position: absolute;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      pointer-events: none;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🐂</span>
+      <span class="logo-text">Bull Run Blitz</span>
+    </div>
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-label">Portfolio</div>
+        <div class="stat-value gold" id="portfolio">$1,000</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Day P&L</div>
+        <div class="stat-value green" id="dayPnl">+$0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value" id="winRate">0%</div>
+      </div>
+      <div class="streak-badge" id="streak">
+        🔥 <span id="streakNum">0</span>
+      </div>
+      <div class="stat">
+        <div class="stat-label">AUM</div>
+        <div class="stat-value" id="aum">$0</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="chart-area">
+      <div class="chart-container">
+        <div class="chart-header">
+          <div class="ticker-group">
+            <div class="ticker">
+              $BULL <span class="ticker-badge">BLITZ</span>
+            </div>
+            <div class="price-display" id="price">$100.00</div>
+            <div class="price-change up" id="change">+0.00%</div>
+          </div>
+          <div class="controls">
+            <button class="control-btn" data-speed="0.5">0.5×</button>
+            <button class="control-btn active" data-speed="1">1×</button>
+            <button class="control-btn" data-speed="2">2×</button>
+            <button class="control-btn" data-speed="4">4×</button>
+            <button class="control-btn" id="pauseBtn">⏸</button>
+          </div>
+        </div>
+        <canvas id="chart"></canvas>
+        <div class="chart-tooltip" id="tooltip" style="display:none"></div>
+      </div>
+      
+      <div class="trade-panel">
+        <div class="trade-col">
+          <h4>Position</h4>
+          <div class="trade-value" id="posInfo">None</div>
+          <div class="size-row">
+            <input type="number" id="size" value="100" min="1">
+            <div class="size-presets">
+              <button class="preset-btn" data-p="25">25%</button>
+              <button class="preset-btn" data-p="50">50%</button>
+              <button class="preset-btn" data-p="100">MAX</button>
+            </div>
+          </div>
+        </div>
+        <div class="trade-col">
+          <h4>Unrealized P&L</h4>
+          <div class="trade-value" id="pnl">$0.00</div>
+          <h4>Entry</h4>
+          <div class="trade-value" id="entry">—</div>
+        </div>
+        <div class="action-buttons">
+          <button class="action-btn long" id="longBtn">🐂 Long</button>
+          <button class="action-btn short" id="shortBtn">🐻 Short</button>
+          <button class="action-btn close" id="closeBtn" disabled>Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="panel">
+        <div class="panel-title">🏆 Rank</div>
+        <div class="rank-card">
+          <div class="rank-icon" id="rankIcon">🐣</div>
+          <div class="rank-name" id="rankName">Retail Trader</div>
+          <div class="rank-sub" id="rankSub">Just getting started</div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress" style="width:0%"></div>
+        </div>
+        <div class="progress-label" id="nextRank">Next: Day Trader at $5,000</div>
+        <div class="achievements-row" id="achievements"></div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-title">⚡ Power-Ups</div>
+        <div class="powerups-grid" id="powerups"></div>
+        <button class="ad-btn" id="adBtn">📺 Watch Ad → Free Power-Up</button>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-title">🛒 Upgrades</div>
+        <div id="upgrades"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ========== GAME STATE ==========
+    const G = {
+      cash: 1000,
+      dayPnl: 0,
+      totalPnl: 0,
+      trades: 0,
+      wins: 0,
+      streak: 0,
+      bestStreak: 0,
+      aum: 0,
+      rank: 0,
+      pos: null,
+      candles: [],
+      price: 100,
+      basePrice: 100,
+      speed: 1,
+      paused: false,
+      tick: 0,
+      cw: 9,
+      cg: 3,
+      visible: 75,
+      sound: true,
+      powerups: {
+        rewind: { n: 1, cd: 0 },
+        slowmo: { n: 1, cd: 0 },
+        insider: { n: 0, cd: 0, on: false, dur: 0 },
+        shield: { n: 0, on: false },
+        frenzy: { n: 0, on: false, dur: 0 }
+      },
+      upgrades: { monitors: false, alerts: false, news: false, quant: false, patternRec: false },
+      achievements: { first: false, win: false, s3: false, s5: false, s10: false, whale: false, mm: false },
+      adCooldown: 0
+    };
+
+    const ranks = [
+      { name: 'Retail Trader', icon: '🐣', sub: 'Just getting started', t: 0 },
+      { name: 'Day Trader', icon: '📊', sub: 'Making moves', t: 5000 },
+      { name: 'Swing Trader', icon: '🦅', sub: 'Catching waves', t: 25000 },
+      { name: 'Fund Manager', icon: '💼', sub: 'Running a fund', t: 100000 },
+      { name: 'Hedge Fund', icon: '🏛️', sub: 'Institutional', t: 500000 },
+      { name: 'Elite Trader', icon: '👑', sub: 'Top 1%', t: 2000000 },
+      { name: 'Market Legend', icon: '🌟', sub: 'Hall of Fame', t: 10000000 }
+    ];
+    const achs = [
+      { id: 'first', icon: '🎯', name: 'First Blood', d: 'First trade' },
+      { id: 'win', icon: '✅', name: 'Winner', d: 'First win' },
+      { id: 's3', icon: '🔥', name: 'Hot Hand', d: '3 streak' },
+      { id: 's5', icon: '💥', name: 'On Fire', d: '5 streak' },
+      { id: 's10', icon: '⚡', name: 'Unstoppable', d: '10 streak' },
+      { id: 'whale', icon: '🐋', name: 'Whale', d: '$1K single trade' },
+      { id: 'mm', icon: '💎', name: 'Millionaire', d: 'Hit $1M' }
+    ];
+    const pows = [
+      { id: 'rewind', icon: '⏪', name: 'Rewind' },
+      { id: 'slowmo', icon: '🐢', name: 'Slow-Mo' },
+      { id: 'insider', icon: '🔮', name: 'Insider' },
+      { id: 'shield', icon: '🛡️', name: 'Shield' },
+      { id: 'frenzy', icon: '💹', name: 'Frenzy' }
+    ];
+    const upgs = [
+      { id: 'monitors', icon: '🖥️', name: 'Dual Monitors', d: '+15 candles', p: 500, r: 0 },
+      { id: 'alerts', icon: '🤖', name: 'Trade Alerts', d: 'Flash on moves', p: 2000, r: 1 },
+      { id: 'news', icon: '📰', name: 'News Feed', d: 'Market news', p: 5000, r: 1 },
+      { id: 'quant', icon: '🧮', name: 'Quant Models', d: '+10% bonus', p: 25000, r: 2 },
+      { id: 'patternRec', icon: '🔮', name: 'Pattern AI', d: 'Shows chart patterns', p: 15000, r: 2 }
+    ];
+
+    // ========== AUDIO ==========
+    let actx;
+    function beep(type) {
+      if (!G.sound) return;
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.connect(g); g.connect(actx.destination);
+      const t = actx.currentTime;
+      if (type === 'buy') { o.frequency.setValueAtTime(500, t); o.frequency.exponentialRampToValueAtTime(800, t + 0.1); }
+      else if (type === 'sell') { o.frequency.setValueAtTime(600, t); o.frequency.exponentialRampToValueAtTime(350, t + 0.1); }
+      else if (type === 'win') { o.frequency.setValueAtTime(523, t); o.frequency.setValueAtTime(659, t + 0.1); o.frequency.setValueAtTime(784, t + 0.2); }
+      else if (type === 'lose') { o.frequency.setValueAtTime(400, t); o.frequency.exponentialRampToValueAtTime(200, t + 0.15); }
+      else if (type === 'ach') { o.type = 'triangle'; o.frequency.setValueAtTime(523, t); o.frequency.setValueAtTime(784, t + 0.12); o.frequency.setValueAtTime(1047, t + 0.24); }
+      g.gain.setValueAtTime(0.08, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t); o.stop(t + 0.35);
+    }
+
+    // ========== CANVAS ==========
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+    function resize() {
+      const r = canvas.parentElement.getBoundingClientRect();
+      canvas.width = r.width - 24;
+      canvas.height = r.height - 54;
+      G.visible = Math.floor(canvas.width / (G.cw + G.cg));
+      if (G.upgrades.monitors) G.visible += 15;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ========== MARKET ENGINE ==========
+    // Volatile but with learnable patterns
+    const M = { 
+      trend: 0, 
+      trendDur: 0, 
+      vol: 0.008, // Increased base volatility
+      mom: 0, 
+      sup: 95, 
+      res: 105, 
+      regime: 'normal', 
+      regDur: 0,
+      pattern: null, // Current pattern type
+      patternDur: 0,
+      cycle: 0, // For sinusoidal patterns
+      lastClose: 100
+    };
+
+    // Pattern types that players can learn to recognize
+    const PATTERNS = {
+      'breakout': { vol: 0.012, dur: [8, 15], desc: 'Sharp move after consolidation' },
+      'flag': { vol: 0.006, dur: [12, 20], desc: 'Brief pause in strong trend' },
+      'double_top': { vol: 0.009, dur: [15, 25], desc: 'Two peaks at similar level' },
+      'double_bottom': { vol: 0.009, dur: [15, 25], desc: 'Two lows at similar level' },
+      'ranging': { vol: 0.007, dur: [20, 35], desc: 'Sideways between support/resistance' },
+      'trending': { vol: 0.01, dur: [18, 30], desc: 'Strong directional movement' },
+      'volatile': { vol: 0.015, dur: [10, 18], desc: 'Wild swings, hard to predict' }
+    };
+
+    function selectPattern() {
+      const keys = Object.keys(PATTERNS);
+      const r = Math.random();
+      // Weight patterns - some more common than others
+      if (r < 0.30) return 'ranging'; // 30% of time
+      if (r < 0.50) return 'trending'; // 20% of time
+      if (r < 0.65) return 'breakout'; // 15% of time
+      if (r < 0.75) return 'flag'; // 10% of time
+      if (r < 0.85) return 'double_top'; // 10% of time
+      if (r < 0.95) return 'double_bottom'; // 10% of time
+      return 'volatile'; // 5% of time - chaotic
+    }
+
+    function updateMarket() {
+      M.cycle += 0.1; // Increment cycle for wave patterns
+      
+      // Pattern management
+      if (--M.patternDur <= 0) {
+        M.pattern = selectPattern();
+        const p = PATTERNS[M.pattern];
+        M.vol = p.vol;
+        M.patternDur = p.dur[0] + Math.floor(Math.random() * (p.dur[1] - p.dur[0]));
+        
+        // Set trend based on pattern
+        switch(M.pattern) {
+          case 'breakout':
+            M.trend = (Math.random() > 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.4);
+            break;
+          case 'flag':
+            M.trend = M.trend * 0.2; // Pause - weak trend
+            break;
+          case 'double_top':
+            M.trend = 0.1; // Weak upward then reversal
+            break;
+          case 'double_bottom':
+            M.trend = -0.1; // Weak downward then reversal
+            break;
+          case 'ranging':
+            M.trend = (Math.random() - 0.5) * 0.2; // Very weak/no trend
+            break;
+          case 'trending':
+            M.trend = (Math.random() > 0.5 ? 1 : -1) * (0.4 + Math.random() * 0.3);
+            break;
+          case 'volatile':
+            M.trend = (Math.random() - 0.5) * 0.8; // Wild swings
+            break;
+        }
+      }
+      
+      // Gradually decay trend and add noise
+      M.trend *= 0.98;
+      M.trend += (Math.random() - 0.5) * 0.05;
+      
+      // Dynamic support/resistance updates
+      if (G.price > M.res * 1.01) { 
+        M.sup = M.res; 
+        M.res = G.price * (1.02 + Math.random() * 0.02); 
+        if (M.trend < 0.1) M.trend = 0.15;
+      }
+      else if (G.price < M.sup * 0.99) { 
+        M.res = M.sup; 
+        M.sup = G.price * (0.98 - Math.random() * 0.02); 
+        if (M.trend > -0.1) M.trend = -0.15;
+      }
+      
+      // Pull toward support/resistance midline when ranging
+      if (M.pattern === 'ranging') {
+        const mid = (M.sup + M.res) / 2;
+        const pull = (mid - G.price) / mid * 0.02;
+        M.trend += pull;
+      }
+    }
+
+    function genCandle() {
+      updateMarket();
+      const o = G.price;
+      let h = o, l = o, p = o;
+      
+      // Generate 40 ticks per candle for realistic movement
+      const ticks = 40;
+      for (let i = 0; i < ticks; i++) {
+        const progress = i / ticks;
+        
+        // Base movement: random + trend + momentum
+        let d = (Math.random() - 0.5) * 2 * M.vol + M.trend * 0.001;
+        
+        // Add pattern-specific behaviors
+        switch(M.pattern) {
+          case 'breakout':
+            // Early consolidation, late explosive move
+            if (progress > 0.6) {
+              d += M.trend * 0.003; // Accelerate
+            } else {
+              d *= 0.5; // Tight range early
+            }
+            break;
+            
+          case 'flag':
+            // Opposite to trend initially, then continue
+            if (progress < 0.4) {
+              d -= M.trend * 0.002; // Counter-trend
+            } else {
+              d += M.trend * 0.003; // Resume
+            }
+            break;
+            
+          case 'double_top':
+            // Push up twice
+            if (progress < 0.3 || (progress > 0.5 && progress < 0.7)) {
+              d += 0.004; // Up moves
+            } else if (progress > 0.85) {
+              d -= 0.005; // Breakdown
+            }
+            break;
+            
+          case 'double_bottom':
+            // Push down twice
+            if (progress < 0.3 || (progress > 0.5 && progress < 0.7)) {
+              d -= 0.004; // Down moves
+            } else if (progress > 0.85) {
+              d += 0.005; // Breakup
+            }
+            break;
+            
+          case 'ranging':
+            // Mean reversion within bounds
+            const rangePos = (p - M.sup) / (M.res - M.sup);
+            if (rangePos > 0.85) d -= 0.003; // Bounce off resistance
+            if (rangePos < 0.15) d += 0.003; // Bounce off support
+            // Add some sine wave for rhythm
+            d += Math.sin(M.cycle + progress * 6) * 0.001;
+            break;
+            
+          case 'trending':
+            // Strong trend with shallow pullbacks
+            d += M.trend * 0.002;
+            if (Math.random() < 0.2) d -= M.trend * 0.004; // Occasional pullback
+            break;
+            
+          case 'volatile':
+            // Chaotic with occasional spikes
+            d *= 1.5;
+            if (Math.random() < 0.08) d += (Math.random() - 0.5) * 0.02; // Spike
+            break;
+        }
+        
+        // Momentum persistence
+        M.mom = M.mom * 0.92 + d * 0.08;
+        d += M.mom * 0.3;
+        
+        // Apply price change
+        p *= 1 + d;
+        h = Math.max(h, p); 
+        l = Math.min(l, p);
+      }
+      
+      // Ensure body has some size (avoid doji-only charts)
+      if (Math.abs(p - o) / o < 0.002) {
+        p = o * (1 + (Math.random() - 0.5) * 0.004);
+      }
+      
+      G.price = p; 
+      G.tick++;
+      M.lastClose = p;
+      return { o, h, l, c: p, t: Date.now(), pattern: M.pattern };
+    }
+
+    // ========== DRAW ==========
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!G.candles.length) return;
+      
+      // Get visible candles
+      const vis = G.candles.slice(-G.visible);
+      
+      // Calculate min/max for scaling
+      let minP = Infinity, maxP = -Infinity;
+      vis.forEach(c => { 
+        minP = Math.min(minP, c.l); 
+        maxP = Math.max(maxP, c.h); 
+      });
+      const pad = (maxP - minP) * 0.12 || 1; // Slightly more padding for volatile moves
+      minP -= pad; 
+      maxP += pad;
+      const range = maxP - minP, 
+            H = canvas.height - 28, 
+            W = canvas.width - 50;
+
+      // Draw grid lines
+      ctx.strokeStyle = '#21262d'; 
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = 14 + (H / 4) * i;
+        ctx.beginPath(); 
+        ctx.moveTo(50, y); 
+        ctx.lineTo(canvas.width, y); 
+        ctx.stroke();
+        ctx.fillStyle = '#484f58'; 
+        ctx.font = '10px JetBrains Mono'; 
+        ctx.textAlign = 'right';
+        ctx.fillText('$' + (maxP - (range / 4) * i).toFixed(2), 48, y + 3);
+      }
+
+      // FIXED: Proper x-coordinate calculation
+      const cw = G.cw; // Candle width
+      const cg = G.cg; // Candle gap
+      const totalCandleWidth = cw + cg;
+      
+      // Start from right edge and work backwards
+      // Rightmost candle should be at canvas.width - margin
+      const rightMargin = 20;
+      const startX = canvas.width - rightMargin - cw;
+      
+      vis.forEach((c, i) => {
+        // i=0 is rightmost (most recent), i increases going left
+        const x = startX - (vis.length - 1 - i) * totalCandleWidth;
+        const green = c.c >= c.o;
+        
+        // Calculate Y coordinates (inverted because canvas Y increases downward)
+        const oY = 14 + ((maxP - c.o) / range) * H;
+        const cY = 14 + ((maxP - c.c) / range) * H;
+        const hY = 14 + ((maxP - c.h) / range) * H;
+        const lY = 14 + ((maxP - c.l) / range) * H;
+        
+        // Draw wick (high to low)
+        ctx.strokeStyle = green ? '#3fb950' : '#f85149'; 
+        ctx.lineWidth = 1;
+        ctx.beginPath(); 
+        ctx.moveTo(x + cw / 2, hY); 
+        ctx.lineTo(x + cw / 2, lY); 
+        ctx.stroke();
+        
+        // Draw body (open to close)
+        ctx.fillStyle = green ? '#3fb950' : '#f85149';
+        const bodyTop = Math.min(oY, cY);
+        const bodyHeight = Math.max(Math.abs(cY - oY), 1);
+        ctx.fillRect(x, bodyTop, cw, bodyHeight);
+      });
+      
+      // Draw current pattern indicator if player has pattern recognition upgrade
+      if (M.pattern && G.upgrades.patternRec) {
+        const p = PATTERNS[M.pattern];
+        ctx.fillStyle = 'rgba(210, 153, 34, 0.9)';
+        ctx.font = 'bold 11px JetBrains Mono';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Pattern: ${M.pattern.replace('_', ' ').toUpperCase()}`, 60, 26);
+        ctx.fillStyle = 'rgba(139, 148, 158, 0.8)';
+        ctx.font = '9px JetBrains Mono';
+        ctx.fillText(p.desc, 60, 38);
+      }
+
+      if (G.pos) {
+        const eY = 14 + ((maxP - G.pos.entry) / range) * H;
+        ctx.strokeStyle = G.pos.side === 'long' ? '#3fb950' : '#f85149';
+        ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(50, eY); ctx.lineTo(canvas.width, eY); ctx.stroke(); ctx.setLineDash([]);
+      }
+
+      if (G.upgrades.alerts && G.candles.length >= 2) {
+        const last = G.candles.at(-1), prev = G.candles.at(-2);
+        if (Math.abs((last.c - prev.c) / prev.c) > 0.012) {
+          ctx.fillStyle = last.c > prev.c ? 'rgba(63,185,80,0.08)' : 'rgba(248,81,73,0.08)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+    }
+
+    // ========== TRADING ==========
+    function openPos(side) {
+      if (G.pos) return;
+      const sz = parseInt(document.getElementById('size').value);
+      if (sz > G.cash || sz <= 0) { toast('Insufficient funds!', 'error'); return; }
+      G.pos = { side, size: sz, entry: G.price };
+      beep(side === 'long' ? 'buy' : 'sell');
+      if (!G.achievements.first) unlock('first');
+      updateUI();
+    }
+
+    function closePos() {
+      if (!G.pos) return;
+      let pnl = calcPnl();
+      if (G.powerups.frenzy.on && pnl > 0) pnl *= 2;
+      if (G.upgrades.quant && pnl > 0) pnl *= 1.1;
+      if (pnl < 0 && G.powerups.shield.on) {
+        G.powerups.shield.on = false;
+        toast('🛡️ Shield blocked!', 'success');
+        G.pos = null; updateUI(); return;
+      }
+      G.cash += pnl; G.dayPnl += pnl; G.totalPnl += pnl; G.trades++;
+      if (pnl > 0) {
+        G.wins++; G.streak++;
+        if (G.streak > G.bestStreak) G.bestStreak = G.streak;
+        beep('win'); flash('win');
+        if (!G.achievements.win) unlock('win');
+        if (G.streak >= 3 && !G.achievements.s3) unlock('s3');
+        if (G.streak >= 5 && !G.achievements.s5) unlock('s5');
+        if (G.streak >= 10 && !G.achievements.s10) unlock('s10');
+        if (pnl >= 1000 && !G.achievements.whale) unlock('whale');
+      } else { G.streak = 0; beep('lose'); flash('lose'); }
+      toast(`${pnl >= 0 ? '✅' : '❌'} ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(0)}`, pnl >= 0 ? 'success' : 'error');
+      G.pos = null;
+      checkRank(); save(); updateUI();
+    }
+
+    function calcPnl() {
+      if (!G.pos) return 0;
+      const d = G.price - G.pos.entry;
+      return ((G.pos.side === 'long' ? d : -d) / G.pos.entry) * G.pos.size;
+    }
+
+    // ========== POWERUPS ==========
+    function usePow(id) {
+      const p = G.powerups[id];
+      if (p.n <= 0 || p.cd > 0) return;
+      switch (id) {
+        case 'rewind': if (G.candles.length > 10) { G.candles = G.candles.slice(0, -10); G.price = G.candles.at(-1).c; toast('⏪ Rewound!', 'success'); } break;
+        case 'slowmo': G.speed = 0.5; updSpeed(); setTimeout(() => { G.speed = 1; updSpeed(); }, 30000); toast('🐢 Slow-Mo!', 'success'); break;
+        case 'insider': p.on = true; p.dur = 25; toast('🔮 Insider!', 'success'); break;
+        case 'shield': p.on = true; toast('🛡️ Shield ready!', 'success'); break;
+        case 'frenzy': p.on = true; p.dur = 30; toast('💹 FRENZY!', 'success'); break;
+      }
+      p.n--; p.cd = 45; updateUI();
+    }
+
+    function buyUpg(id) {
+      const u = upgs.find(x => x.id === id);
+      if (!u || G.upgrades[id] || G.cash < u.p || G.rank < u.r) return;
+      G.cash -= u.p; G.upgrades[id] = true;
+      if (id === 'monitors') G.visible += 15;
+      beep('ach'); toast(`🛒 ${u.name}!`, 'success'); save(); updateUI();
+    }
+
+    // ========== REWARDED AD ==========
+    function watchAd() {
+      if (G.adCooldown > 0) return;
+      // Simulate ad (in production, integrate real ad SDK)
+      toast('📺 Watching ad...', 'info');
+      setTimeout(() => {
+        const options = ['rewind', 'slowmo', 'shield'];
+        const choice = options[Math.floor(Math.random() * options.length)];
+        G.powerups[choice].n++;
+        toast(`🎁 Got ${pows.find(p => p.id === choice).icon}!`, 'success');
+        G.adCooldown = 180; // 3 min cooldown
+        updateUI();
+      }, 2000);
+    }
+
+    // ========== PROGRESSION ==========
+    function checkRank() {
+      const tot = G.cash + G.aum;
+      for (let i = ranks.length - 1; i >= 0; i--) {
+        if (tot >= ranks[i].t && G.rank < i) {
+          G.rank = i;
+          beep('ach');
+          toast(`🏆 ${ranks[i].name}!`, 'achievement');
+          if (i === 1) G.powerups.slowmo.n++;
+          if (i === 2) G.powerups.insider.n++;
+          if (i === 3) G.powerups.shield.n++;
+          if (i === 4) G.powerups.frenzy.n++;
+          break;
+        }
+      }
+      if (tot >= 1000000 && !G.achievements.mm) unlock('mm');
+      if (G.rank >= 3 && Math.random() < 0.06) {
+        const amt = [10000, 25000, 50000, 100000][Math.floor(Math.random() * 4)] * (1 + G.rank * 0.5);
+        G.aum += amt;
+        toast(`💰 Investor +$${(amt / 1000).toFixed(0)}K`, 'success');
+      }
+    }
+
+    function unlock(id) {
+      if (G.achievements[id]) return;
+      G.achievements[id] = true;
+      const a = achs.find(x => x.id === id);
+      beep('ach'); toast(`🏆 ${a.icon} ${a.name}!`, 'achievement'); save(); updateUI();
+    }
+
+    // ========== UI ==========
+    function updateUI() {
+      document.getElementById('portfolio').textContent = '$' + G.cash.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      const dp = document.getElementById('dayPnl');
+      dp.textContent = (G.dayPnl >= 0 ? '+' : '') + '$' + G.dayPnl.toFixed(0);
+      dp.className = 'stat-value ' + (G.dayPnl >= 0 ? 'green' : 'red');
+      document.getElementById('winRate').textContent = G.trades ? Math.round(G.wins / G.trades * 100) + '%' : '0%';
+      document.getElementById('aum').textContent = '$' + (G.aum / 1000).toFixed(0) + 'K';
+      document.getElementById('streakNum').textContent = G.streak;
+      document.getElementById('streak').className = 'streak-badge' + (G.streak >= 3 ? ' hot' : '');
+
+      document.getElementById('price').textContent = '$' + G.price.toFixed(2);
+      const chg = ((G.price - G.basePrice) / G.basePrice) * 100;
+      const ce = document.getElementById('change');
+      ce.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+      ce.className = 'price-change ' + (chg >= 0 ? 'up' : 'down');
+
+      if (G.pos) {
+        document.getElementById('posInfo').textContent = G.pos.side.toUpperCase() + ' ' + G.pos.size;
+        document.getElementById('entry').textContent = '$' + G.pos.entry.toFixed(2);
+        const pnl = calcPnl();
+        const pe = document.getElementById('pnl');
+        pe.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+        pe.style.color = pnl >= 0 ? 'var(--green-bright)' : 'var(--red)';
+        document.getElementById('longBtn').disabled = true;
+        document.getElementById('shortBtn').disabled = true;
+        document.getElementById('closeBtn').disabled = false;
+      } else {
+        document.getElementById('posInfo').textContent = 'None';
+        document.getElementById('entry').textContent = '—';
+        document.getElementById('pnl').textContent = '$0.00';
+        document.getElementById('pnl').style.color = '';
+        document.getElementById('longBtn').disabled = false;
+        document.getElementById('shortBtn').disabled = false;
+        document.getElementById('closeBtn').disabled = true;
+      }
+
+      const r = ranks[G.rank];
+      document.getElementById('rankIcon').textContent = r.icon;
+      document.getElementById('rankName').textContent = r.name;
+      document.getElementById('rankSub').textContent = r.sub;
+      const nr = ranks[G.rank + 1];
+      if (nr) {
+        const prog = ((G.cash + G.aum) - r.t) / (nr.t - r.t) * 100;
+        document.getElementById('progress').style.width = Math.min(100, Math.max(0, prog)) + '%';
+        document.getElementById('nextRank').textContent = `Next: ${nr.name} at $${nr.t.toLocaleString()}`;
+      } else {
+        document.getElementById('progress').style.width = '100%';
+        document.getElementById('nextRank').textContent = 'Max Rank!';
+      }
+
+      const achEl = document.getElementById('achievements');
+      achEl.innerHTML = '';
+      achs.forEach(a => {
+        const d = document.createElement('div');
+        d.className = 'ach-icon' + (G.achievements[a.id] ? ' unlocked' : '');
+        d.textContent = a.icon;
+        d.title = a.name + ': ' + a.d;
+        achEl.appendChild(d);
+      });
+
+      const powEl = document.getElementById('powerups');
+      powEl.innerHTML = '';
+      pows.forEach(pw => {
+        const p = G.powerups[pw.id];
+        const d = document.createElement('div');
+        d.className = 'powerup' + (p.n <= 0 ? ' locked' : '') + (p.cd > 0 ? ' cooldown' : '');
+        d.innerHTML = `<div class="powerup-icon">${pw.icon}</div><div class="powerup-name">${pw.name}</div><div class="powerup-count">${p.cd > 0 ? p.cd + 's' : 'x' + p.n}</div>`;
+        d.onclick = () => usePow(pw.id);
+        powEl.appendChild(d);
+      });
+
+      document.getElementById('adBtn').disabled = G.adCooldown > 0;
+      document.getElementById('adBtn').textContent = G.adCooldown > 0 ? `⏳ ${G.adCooldown}s` : '📺 Watch Ad → Free Power-Up';
+
+      const upgEl = document.getElementById('upgrades');
+      upgEl.innerHTML = '';
+      upgs.forEach(u => {
+        const owned = G.upgrades[u.id], locked = G.rank < u.r;
+        const d = document.createElement('div');
+        d.className = 'upgrade' + (owned ? ' owned' : '') + (locked ? ' locked' : '');
+        d.innerHTML = `<div class="upgrade-icon">${u.icon}</div><div class="upgrade-info"><div class="upgrade-name">${u.name}</div><div class="upgrade-desc">${locked ? 'Unlock at ' + ranks[u.r].name : u.d}</div></div><div class="upgrade-cost ${owned ? 'done' : ''}">${owned ? '✓' : '$' + u.p.toLocaleString()}</div>`;
+        if (!owned && !locked && G.cash >= u.p) d.onclick = () => buyUpg(u.id);
+        upgEl.appendChild(d);
+      });
+    }
+
+    function toast(msg, type = 'info') {
+      const d = document.createElement('div');
+      d.className = 'toast ' + type;
+      d.textContent = msg;
+      document.body.appendChild(d);
+      setTimeout(() => d.remove(), 2500);
+    }
+
+    function flash(type) {
+      const d = document.createElement('div');
+      d.className = 'flash-overlay ' + type;
+      document.body.appendChild(d);
+      setTimeout(() => d.remove(), 350);
+    }
+
+    function updSpeed() {
+      document.querySelectorAll('.control-btn[data-speed]').forEach(b => {
+        b.classList.toggle('active', parseFloat(b.dataset.speed) === G.speed);
+      });
+    }
+
+    // ========== SAVE/LOAD ==========
+    function save() {
+      localStorage.setItem('bullrunblitz', JSON.stringify({
+        cash: G.cash, totalPnl: G.totalPnl, trades: G.trades, wins: G.wins,
+        bestStreak: G.bestStreak, aum: G.aum, rank: G.rank,
+        powerups: G.powerups, upgrades: G.upgrades, achievements: G.achievements
+      }));
+    }
+
+    function load() {
+      const s = localStorage.getItem('bullrunblitz');
+      if (s) {
+        const d = JSON.parse(s);
+        Object.assign(G, d);
+        if (G.upgrades.monitors) G.visible += 15;
+      }
+    }
+
+    // ========== EVENTS ==========
+    document.getElementById('longBtn').onclick = () => openPos('long');
+    document.getElementById('shortBtn').onclick = () => openPos('short');
+    document.getElementById('closeBtn').onclick = closePos;
+    document.getElementById('adBtn').onclick = watchAd;
+
+    document.querySelectorAll('.control-btn[data-speed]').forEach(b => {
+      b.onclick = () => { G.speed = parseFloat(b.dataset.speed); updSpeed(); };
+    });
+    document.getElementById('pauseBtn').onclick = () => {
+      G.paused = !G.paused;
+      document.getElementById('pauseBtn').textContent = G.paused ? '▶' : '⏸';
+    };
+    document.querySelectorAll('.preset-btn').forEach(b => {
+      b.onclick = () => document.getElementById('size').value = Math.floor(G.cash * parseInt(b.dataset.p) / 100);
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key.toLowerCase() === 'b') openPos('long');
+      if (e.key.toLowerCase() === 's') openPos('short');
+      if (e.key.toLowerCase() === 'c' || e.key.toLowerCase() === 'x') closePos();
+      if (e.key === ' ') { e.preventDefault(); G.paused = !G.paused; document.getElementById('pauseBtn').textContent = G.paused ? '▶' : '⏸'; }
+    });
+
+    // ========== GAME LOOP ==========
+    let lt = 0, acc = 0;
+    const tick = 380;
+
+    function loop(ts) {
+      if (!lt) lt = ts;
+      const dt = ts - lt; lt = ts;
+      if (!G.paused) {
+        acc += dt * G.speed;
+        while (acc >= tick) {
+          G.candles.push(genCandle());
+          if (G.candles.length > 500) G.candles.shift();
+          Object.values(G.powerups).forEach(p => { if (p.cd > 0) p.cd--; });
+          if (G.powerups.insider.on && --G.powerups.insider.dur <= 0) G.powerups.insider.on = false;
+          if (G.powerups.frenzy.on && --G.powerups.frenzy.dur <= 0) G.powerups.frenzy.on = false;
+          if (G.adCooldown > 0) G.adCooldown--;
+          acc -= tick;
+        }
+      }
+      draw(); updateUI();
+      requestAnimationFrame(loop);
+    }
+
+    // ========== INIT ==========
+    load();
+    for (let i = 0; i < 45; i++) G.candles.push(genCandle());
+    updateUI();
+    requestAnimationFrame(loop);
+    toast('🐂 B=Long, S=Short, C=Close, Space=Pause', 'info');
+  </script>
+</body>
+</html>
