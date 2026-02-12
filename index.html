@@ -265,7 +265,12 @@
     .action-buttons {
       display: flex;
       gap: 8px;
-      grid-column: span 2;
+    }
+    
+    .trade-info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
     }
     .action-btn {
       flex: 1;
@@ -412,8 +417,19 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 15px rgba(163, 113, 247, 0.2);
     }
-    .powerup.locked { opacity: 0.3; cursor: not-allowed; }
-    .powerup.cooldown { opacity: 0.5; cursor: not-allowed; }
+    .powerup.locked { 
+      opacity: 0.4; 
+      cursor: default;
+      background: transparent;
+      border: 1px dashed var(--border);
+      filter: grayscale(1);
+    }
+    .powerup.locked .powerup-icon { filter: grayscale(1); }
+    .powerup.cooldown { 
+      opacity: 0.5; 
+      cursor: default;
+      background: rgba(48, 54, 61, 0.3);
+    }
     .powerup-icon { font-size: 1.3rem; margin-bottom: 4px; }
     .powerup-name { font-size: 0.6rem; font-weight: 500; color: var(--text-secondary); }
     .powerup-count { font-size: 0.55rem; color: var(--purple); margin-top: 2px; }
@@ -433,7 +449,15 @@
     }
     .upgrade:hover:not(.owned):not(.locked) { border-color: var(--gold); }
     .upgrade.owned { border-color: var(--green); background: rgba(63, 185, 80, 0.1); }
-    .upgrade.locked { opacity: 0.35; cursor: not-allowed; }
+    .upgrade.locked { 
+      opacity: 0.4; 
+      cursor: default;
+      background: transparent;
+      border: 1px dashed var(--border);
+      filter: grayscale(1);
+    }
+    .upgrade.locked .upgrade-icon { filter: grayscale(1); }
+    .upgrade.locked .upgrade-cost { color: #8b949e; }
     .upgrade-icon { font-size: 1.2rem; }
     .upgrade-info { flex: 1; }
     .upgrade-name { font-size: 0.8rem; font-weight: 600; }
@@ -543,61 +567,196 @@
       .header {
         flex-wrap: wrap;
         height: auto;
-        padding: 8px 12px;
-        gap: 8px;
+        padding: 8px 10px;
+        gap: 6px;
       }
       .stats-bar {
         flex-wrap: wrap;
         justify-content: center;
-        gap: 8px;
+        gap: 6px;
         width: 100%;
+        font-size: 0.75rem;
       }
       .stat {
-        padding: 4px 8px;
-        min-width: 70px;
+        padding: 4px 6px;
+        min-width: 60px;
       }
-      .stat-label { font-size: 0.5rem; }
-      .stat-value { font-size: 0.8rem; }
-      .logo-text { font-size: 1rem; }
+      .stat-label { font-size: 0.55rem; }
+      .stat-value { font-size: 0.75rem; }
+      .streak-badge { padding: 4px 8px; font-size: 0.8rem; }
+      .logo-text { font-size: 0.95rem; }
+      .logo-icon { font-size: 1.2rem; }
       
       .main {
         padding: 8px;
         gap: 8px;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+      }
+      
+      .chart-area {
+        gap: 8px;
+      }
+      
+      .chart-container {
+        min-height: 320px;
+        padding: 10px;
       }
       
       .chart-header {
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
+        margin-bottom: 6px;
       }
-      .ticker { font-size: 0.9rem; }
-      .price-display { font-size: 1.2rem; }
+      .ticker { font-size: 0.85rem; }
+      .ticker-badge { font-size: 0.6rem; padding: 2px 6px; }
+      .price-display { font-size: 1.1rem; }
+      .price-change { font-size: 0.85rem; }
       .controls {
         flex-wrap: wrap;
-        gap: 4px;
+        gap: 3px;
       }
       .control-btn {
-        padding: 6px 10px;
-        font-size: 0.75rem;
+        padding: 5px 8px;
+        font-size: 0.7rem;
+        min-width: 36px;
       }
       
+      /* Trade panel - directly under chart */
       .trade-panel {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        order: -1;
       }
-      .action-buttons {
-        grid-column: span 1;
+      
+      .trade-info-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        order: 2;
       }
-      .action-btn {
-        padding: 16px 10px;
+      
+      .trade-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        flex: 1;
+      }
+      
+      .trade-col h4 {
+        font-size: 0.6rem;
+        margin-bottom: 4px;
+      }
+      
+      .trade-value {
+        font-size: 0.95rem;
+        margin-bottom: 0;
+      }
+      
+      .size-row {
+        order: 3;
+        margin-bottom: 0;
+      }
+      
+      .size-row input {
+        padding: 8px;
         font-size: 0.9rem;
       }
       
+      .size-presets {
+        gap: 4px;
+      }
+      
+      .preset-btn {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+      }
+      
+      .action-buttons {
+        display: flex;
+        gap: 8px;
+        order: 1;
+        margin-bottom: 4px;
+      }
+      
+      .action-btn {
+        flex: 1;
+        padding: 20px 8px;
+        font-size: 1.1rem;
+        border-radius: 12px;
+      }
+      
       .sidebar {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .panel {
+        padding: 12px;
+      }
+      
+      .panel-title {
+        font-size: 0.7rem;
+        margin-bottom: 10px;
       }
       
       .powerups-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
       }
+      
+      .powerup {
+        padding: 8px 4px;
+      }
+      
+      .powerup-icon { font-size: 1.1rem; }
+      .powerup-name { font-size: 0.55rem; }
+      .powerup-count { font-size: 0.5rem; }
+      
+      .upgrade {
+        padding: 8px;
+        margin-bottom: 6px;
+      }
+      
+      .upgrade-icon { font-size: 1.1rem; }
+      .upgrade-name { font-size: 0.75rem; }
+      .upgrade-desc { font-size: 0.55rem; }
+      .upgrade-cost { font-size: 0.7rem; }
+      
+      .rank-card {
+        padding: 10px;
+      }
+      
+      .rank-icon { font-size: 2rem; }
+      .rank-name { font-size: 0.9rem; }
+      .rank-sub { font-size: 0.65rem; }
+      
+      .progress-track { margin: 10px 0; }
+      .progress-label { font-size: 0.65rem; }
+      
+      .ad-btn {
+        padding: 10px;
+        font-size: 0.8rem;
+        margin-top: 8px;
+      }
+      
+      /* Modal mobile adjustments */
+      .modal-content {
+        margin: 15% auto;
+        width: 92%;
+        padding: 20px 16px;
+      }
+      
+      .modal-icon { font-size: 2.5rem; }
+      .modal-title { font-size: 1.1rem; }
+      .modal-text { font-size: 0.9rem; }
+      .modal-requirement { padding: 10px; }
+      .modal-rank-icon { font-size: 1.5rem; }
+      .modal-btn { padding: 12px; font-size: 0.95rem; }
       
       /* Modal mobile adjustments */
       .modal-content {
@@ -770,28 +929,35 @@
       </div>
       
       <div class="trade-panel">
-        <div class="trade-col">
-          <h4>Position</h4>
-          <div class="trade-value" id="posInfo">None</div>
-          <div class="size-row">
-            <input type="number" id="size" value="100" min="1">
-            <div class="size-presets">
-              <button class="preset-btn" data-p="25">25%</button>
-              <button class="preset-btn" data-p="50">50%</button>
-              <button class="preset-btn" data-p="100">MAX</button>
-            </div>
-          </div>
-        </div>
-        <div class="trade-col">
-          <h4>Unrealized P&L</h4>
-          <div class="trade-value" id="pnl">$0.00</div>
-          <h4>Entry</h4>
-          <div class="trade-value" id="entry">—</div>
-        </div>
+        <!-- Action buttons first for mobile -->
         <div class="action-buttons">
           <button class="action-btn long" id="longBtn">🐂 Long</button>
           <button class="action-btn short" id="shortBtn">🐻 Short</button>
           <button class="action-btn close" id="closeBtn" disabled>Close</button>
+        </div>
+        
+        <div class="trade-info-row">
+          <div class="trade-col">
+            <h4>Position</h4>
+            <div class="trade-value" id="posInfo">None</div>
+          </div>
+          <div class="trade-col">
+            <h4>Unrealized P&L</h4>
+            <div class="trade-value" id="pnl">$0.00</div>
+          </div>
+          <div class="trade-col">
+            <h4>Entry</h4>
+            <div class="trade-value" id="entry">—</div>
+          </div>
+        </div>
+        
+        <div class="size-row">
+          <input type="number" id="size" value="100" min="1">
+          <div class="size-presets">
+            <button class="preset-btn" data-p="25">25%</button>
+            <button class="preset-btn" data-p="50">50%</button>
+            <button class="preset-btn" data-p="100">MAX</button>
+          </div>
         </div>
       </div>
     </div>
